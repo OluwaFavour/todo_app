@@ -64,6 +64,106 @@ pub struct Task {
     pub due_date: NaiveDate,
 }
 
+impl Task {
+    /// Creates a new task with the given details.
+    ///
+    /// # Arguments
+    ///
+    /// - `id`: The unique identifier of the task.
+    /// - `title`: The title of the task.
+    /// - `description`: The description of the task.
+    /// - `done`: Indicates whether the task is done or not.
+    /// - `priority`: The priority of the task.
+    /// - `due_date`: The due date of the task.
+    ///
+    /// # Returns
+    ///
+    /// The new task with the given details.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use chrono::naive::NaiveDate;
+    /// use todo_app::{Task, Priority};
+    ///
+    /// let task = Task::new(
+    ///     1,
+    ///     String::from("Finish project"),
+    ///     String::from("Complete the final tasks for the project"),
+    ///     false,
+    ///     Priority::High,
+    ///     NaiveDate::from_ymd(2022, 12, 31),
+    /// );
+    /// ```
+    pub fn new(
+        id: u128,
+        title: String,
+        description: String,
+        done: bool,
+        priority: Priority,
+        due_date: NaiveDate,
+    ) -> Task {
+        Task {
+            id,
+            title,
+            description,
+            done,
+            priority,
+            due_date,
+        }
+    }
+
+    /// Marks the task as done.
+    /// The function sets the done field of the task to true.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use chrono::naive::NaiveDate;
+    /// use todo_app::{Task, Priority};
+    ///
+    /// let mut task = Task::new(
+    ///     1,
+    ///     String::from("Finish project"),
+    ///     String::from("Complete the final tasks for the project"),
+    ///     false,
+    ///     Priority::High,
+    ///     NaiveDate::from_ymd(2022, 12, 31),
+    /// );
+    /// task.mark_as_done();
+    /// ```
+    pub fn mark_as_done(&mut self) {
+        self.done = true;
+    }
+
+    /// Changes the priority of the task.
+    /// The function sets the priority field of the task to the given priority.
+    ///
+    /// # Arguments
+    ///
+    /// - `priority`: The new priority of the task.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use chrono::naive::NaiveDate;
+    /// use todo_app::{Task, Priority};
+    ///
+    /// let mut task = Task::new(
+    ///     1,
+    ///     String::from("Finish project"),
+    ///     String::from("Complete the final tasks for the project"),
+    ///     false,
+    ///     Priority::High,
+    ///     NaiveDate::from_ymd(2022, 12, 31),
+    /// );
+    /// task.change_priority(Priority::Low);
+    /// ```
+    pub fn change_priority(&mut self, priority: Priority) {
+        self.priority = priority;
+    }
+}
+
 /// Represents the priority of a task.
 /// The priority can be low, medium, or high.
 /// The priority is used to determine the importance of the task.
@@ -153,7 +253,7 @@ pub fn execute(command: Command, task_list: &mut Vec<Task>) {
             // Mark the task with the given ID as done
             let task = task_list.iter_mut().find(|task| task.id == id);
             if let Some(task) = task {
-                task.done = true;
+                task.mark_as_done();
             } else {
                 println!("Task not found");
             }
@@ -162,7 +262,7 @@ pub fn execute(command: Command, task_list: &mut Vec<Task>) {
             // Change the priority of the task with the given ID
             let task = task_list.iter_mut().find(|task| task.id == id);
             if let Some(task) = task {
-                task.priority = priority;
+                task.change_priority(priority);
             } else {
                 println!("Task not found");
             }
@@ -330,14 +430,7 @@ pub fn run(config: Config, tasks: &mut Vec<Task>) {
                     eprintln!("{}", err);
                     process::exit(1);
                 });
-            let task: Task = Task {
-                id: id,
-                title: title,
-                description: description,
-                done: done,
-                priority: priority,
-                due_date: due_date,
-            };
+            let task: Task = Task::new(id, title, description, done, priority, due_date);
             let command = Command::AddTask(task);
             execute(command, tasks);
             execute(Command::ListTasks, tasks);
