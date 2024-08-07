@@ -1,5 +1,6 @@
 use chrono::naive::NaiveDate;
 use std::env;
+use std::io;
 use std::process;
 
 /// Represents a task in the todo app.
@@ -48,10 +49,11 @@ enum Command {
     ListTasks,
 }
 
-fn run(command: Command) {
+fn run(command: Command, task_list: &mut Vec<Task>) {
     match command {
         Command::AddTask(task) => {
             // Add the task to the list of tasks
+            task_list.push(task);
         }
         Command::RemoveTask(id) => {
             // Remove the task with the given ID from the list of tasks
@@ -68,6 +70,33 @@ fn run(command: Command) {
     }
 }
 
+fn get_input(prompt: &str) -> String {
+    println!("{}", prompt);
+    io::stdout().flush().expect("Failed to flush stdout");
+    let mut input: String = String::new();
+    io::stdin()
+        .read_line(&mut input)
+        .expect("Failed to read input");
+    input.trim().to_string()
+}
+
+fn validate_priority(priority: String) -> Result<Priority, &'static str> {
+    match priority.as_str() {
+        "low" => Ok(Priority::Low()),
+        "medium" => Ok(Priority::Medium()),
+        "high" => Ok(Priority::High()),
+        _ => Err("Failed to validate priority"),
+    }
+}
+
+fn handle_date(input: String) -> Result<NaiveDate, &'static str> {
+    date = Ok(
+        NaiveDate::parse_from_str(input.as_str(), "%d-%m-%Y").unwrap_or_else(|err| {
+            return Err(err.to_string().as_str());
+        }),
+    )
+}
+
 struct Config {
     command: String,
     arguments: Vec<String>,
@@ -78,24 +107,50 @@ impl Config {
         if args.len() < 2 {
             return Err("not enough arguments");
         }
-        let command = String::from(args.get(1).unwrap().as_str());
-        let arguments = args[2..].to_vec();
+        let command: &String = args.get(1).unwrap();
+        let arguments: Vec<String> = args[2..].to_vec();
         Ok(Config { command, arguments })
     }
 }
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let config = Config::build(args).unwrap_or_else(|err| {
+    let config: Config = Config::build(args).unwrap_or_else(|err| {
         eprintln!("Error parsing arguments: {}", err);
         process::exit(1);
     });
+    let mut tasks: Vec<Task> = Vec::new();
     match config.command.as_str() {
         "add" => {
             // TODO: Implement the add command
             // - Getting the task details from the user
             // - Creating a new task
             // - Adding the task to the list of tasks or saving it to a file
+            let id: usize = tasks.len() + 1;
+            let title: String = get_input("Task title: ");
+            let description: String = get_input("Task description: ");
+            let done: bool = false;
+            let priority: Priority = validate_priority(get_input(
+                "Priority (low, medium, or high)",
+            ))
+            .unwrap_or_else(|err| {
+                eprintln!(err);
+                process::exit(1);
+            });
+            let due_date = handle_date(get_input("Due date (22-12-2024)")).unwrap_or_else(|err| {
+                eprintln!(err);
+                process::exit(1);
+            });
+            let task: Task = Task {
+                id: id,
+                title: title,
+                description: description,
+                done: done,
+                priority: priority,
+                due_date: due_date,
+            };
+            command = Command::AddTask(task);
+            run(command, &mut tasks);
         }
         "remove" => {
             // TODO: Implement the remove command (Argument: task ID)
