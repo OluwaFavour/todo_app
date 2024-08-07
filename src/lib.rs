@@ -141,6 +141,13 @@ pub fn execute(command: Command, task_list: &mut Vec<Task>) {
         }
         Command::RemoveTask(id) => {
             // Remove the task with the given ID from the list of tasks
+            let index: Option<u128> =
+                task_list.iter().position(|task| task.id == id) as Option<u128>;
+            if let Some(index) = index {
+                task_list.swap_remove(index);
+            } else {
+                println!("Task not found");
+            }
         }
         Command::MarkAsDone(id) => {
             // Mark the task with the given ID as done
@@ -153,6 +160,12 @@ pub fn execute(command: Command, task_list: &mut Vec<Task>) {
         }
         Command::ChangePriority(id, priority) => {
             // Change the priority of the task with the given ID
+            let task = task_list.iter_mut().find(|task| task.id == id);
+            if let Some(task) = task {
+                task.priority = priority;
+            } else {
+                println!("Task not found");
+            }
         }
         Command::ListTasks => {
             // List all tasks
