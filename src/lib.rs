@@ -291,12 +291,24 @@ impl Config {
 ///    command: String::from("done"),
 ///  arguments: vec![String::from("1")],
 /// };
-/// let tasks: Vec<Task> = Vec::new();
-/// run(config, tasks);
+/// let mut tasks: Vec<Task> = Vec::new();
+/// run(config, &mut tasks);
 /// ```
-pub fn run(config: Config, mut tasks: Vec<Task>) {
+pub fn run(config: Config, tasks: &mut Vec<Task>) {
     // Handle the command
     match config.command.as_str() {
+        "help" => {
+            // Display the help message
+            let help_message = "Usage: todo_app [command] [task_id] [priority] [due date]
+    Commands:
+    add: Add a new task
+    list: List all tasks
+    done task_id: Mark a task as done
+    remove task_id: Remove a task
+    priority task_id value: Change the priority of a task
+    help: Display this message";
+            println!("{}", help_message);
+        }
         "add" => {
             // TODO: Implement the add command
             // - Getting the task details from the user
@@ -327,8 +339,8 @@ pub fn run(config: Config, mut tasks: Vec<Task>) {
                 due_date: due_date,
             };
             let command = Command::AddTask(task);
-            execute(command, &mut tasks);
-            execute(Command::ListTasks, &mut tasks);
+            execute(command, tasks);
+            execute(Command::ListTasks, tasks);
         }
         "remove" => {
             // TODO: Implement the remove command (Argument: task ID)
@@ -351,8 +363,8 @@ pub fn run(config: Config, mut tasks: Vec<Task>) {
                 });
             // - Removing the task from the list of tasks
             let command: Command = Command::RemoveTask(task_id);
-            execute(command, &mut tasks);
-            execute(Command::ListTasks, &mut tasks);
+            execute(command, tasks);
+            execute(Command::ListTasks, tasks);
         }
         "done" => {
             // TODO: Implement the done command (Argument: task ID)
@@ -375,8 +387,8 @@ pub fn run(config: Config, mut tasks: Vec<Task>) {
                 });
             // - Changing the done status of the task
             let command: Command = Command::MarkAsDone(task_id);
-            execute(command, &mut tasks);
-            execute(Command::ListTasks, &mut tasks);
+            execute(command, tasks);
+            execute(Command::ListTasks, tasks);
         }
         "priority" => {
             // TODO: Implement the priority command (Arguments: task ID, priority)
@@ -409,13 +421,13 @@ pub fn run(config: Config, mut tasks: Vec<Task>) {
             });
             // - Changing the priority of the task
             let command: Command = Command::ChangePriority(task_id, priority);
-            execute(command, &mut tasks);
-            execute(Command::ListTasks, &mut tasks);
+            execute(command, tasks);
+            execute(Command::ListTasks, tasks);
         }
         "list" => {
             // TODO: Implement the list command
             let command: Command = Command::ListTasks;
-            execute(command, &mut tasks);
+            execute(command, tasks);
         }
         _ => {
             eprintln!("Invalid command: {}", config.command);
