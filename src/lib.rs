@@ -1,5 +1,6 @@
 use chrono::naive::NaiveDate;
 use std::io::{self, Write};
+use std::process;
 
 /// Gets input from the user with the given prompt.
 ///
@@ -141,8 +142,7 @@ pub fn execute(command: Command, task_list: &mut Vec<Task>) {
         }
         Command::RemoveTask(id) => {
             // Remove the task with the given ID from the list of tasks
-            let index: Option<u128> =
-                task_list.iter().position(|task| task.id == id) as Option<u128>;
+            let index: Option<usize> = task_list.iter().position(|task| task.id == id);
             if let Some(index) = index {
                 task_list.swap_remove(index);
             } else {
@@ -271,5 +271,155 @@ impl Config {
         let command: String = args.get(1).unwrap().to_string();
         let arguments: Vec<String> = args[2..].to_vec();
         Ok(Config { command, arguments })
+    }
+}
+
+/// Runs the todo app with the given configuration and list of tasks.
+/// The function executes the command specified in the configuration on the list of tasks.
+/// The function handles the add, remove, done, priority, and list commands.
+///
+/// # Arguments
+///
+/// - `config`: The configuration of the todo app.
+/// - `tasks`: The list of tasks to perform the action on.
+///
+/// # Example
+///
+/// ```
+/// use todo_app::{run, Config, Task};
+/// let config = Config {
+///    command: String::from("done"),
+///  arguments: vec![String::from("1")],
+/// };
+/// let tasks: Vec<Task> = Vec::new();
+/// run(config, tasks);
+/// ```
+pub fn run(config: Config, mut tasks: Vec<Task>) {
+    // Handle the command
+    match config.command.as_str() {
+        "add" => {
+            // TODO: Implement the add command
+            // - Getting the task details from the user
+            // - Creating a new task
+            // - Adding the task to the list of tasks or saving it to a file
+            let id: u128 = tasks.len() as u128 + 1;
+            let title: String = get_input("Task title: ");
+            let description: String = get_input("Task description: ");
+            let done: bool = false;
+            let priority: Priority = validate_priority(&get_input(
+                "Priority (low, medium, or high): ",
+            ))
+            .unwrap_or_else(|err| {
+                eprintln!("{}", err);
+                process::exit(1);
+            });
+            let due_date = handle_date(&get_input("Due date (Example: 22-12-2024): "))
+                .unwrap_or_else(|err| {
+                    eprintln!("{}", err);
+                    process::exit(1);
+                });
+            let task: Task = Task {
+                id: id,
+                title: title,
+                description: description,
+                done: done,
+                priority: priority,
+                due_date: due_date,
+            };
+            let command = Command::AddTask(task);
+            execute(command, &mut tasks);
+            execute(Command::ListTasks, &mut tasks);
+        }
+        "remove" => {
+            // TODO: Implement the remove command (Argument: task ID)
+            if config.arguments.len() < 1 {
+                eprintln!("Task ID is required for the remove command");
+                process::exit(1);
+            } else if config.arguments.len() > 1 {
+                eprintln!("Too many arguments for the remove command");
+                process::exit(1);
+            }
+            // - Validating the task ID
+            let task_id: u128 = config
+                .arguments
+                .get(0)
+                .unwrap()
+                .parse::<u128>()
+                .unwrap_or_else(|err| {
+                    eprintln!("Invalid task ID: {}", err);
+                    process::exit(1);
+                });
+            // - Removing the task from the list of tasks
+            let command: Command = Command::RemoveTask(task_id);
+            execute(command, &mut tasks);
+            execute(Command::ListTasks, &mut tasks);
+        }
+        "done" => {
+            // TODO: Implement the done command (Argument: task ID)
+            if config.arguments.len() < 1 {
+                eprintln!("Task ID is required for the done command");
+                process::exit(1);
+            } else if config.arguments.len() > 1 {
+                eprintln!("Too many arguments for the done command");
+                process::exit(1);
+            }
+            // - Validating the task ID
+            let task_id: u128 = config
+                .arguments
+                .get(0)
+                .unwrap()
+                .parse::<u128>()
+                .unwrap_or_else(|err| {
+                    eprintln!("Invalid task ID: {}", err);
+                    process::exit(1);
+                });
+            // - Changing the done status of the task
+            let command: Command = Command::MarkAsDone(task_id);
+            execute(command, &mut tasks);
+            execute(Command::ListTasks, &mut tasks);
+        }
+        "priority" => {
+            // TODO: Implement the priority command (Arguments: task ID, priority)
+            if config.arguments.len() < 2 {
+                eprintln!("Task ID and priority are required for the priority command");
+                process::exit(1);
+            } else if config.arguments.len() > 2 {
+                eprintln!("Too many arguments for the priority command");
+                process::exit(1);
+            }
+            // - Validating the task ID
+            let task_id: u128 = config
+                .arguments
+                .get(0)
+                .unwrap()
+                .parse::<u128>()
+                .unwrap_or_else(|err| {
+                    eprintln!("Invalid task ID: {}", err);
+                    process::exit(1);
+                });
+            // - Validating the priority
+            let priority: &String = config.arguments.get(1).unwrap_or_else(|| {
+                eprintln!("Priority is required for the priority command");
+                process::exit(1);
+            });
+            // - Creating the priority enum from the string
+            let priority: Priority = validate_priority(&priority.as_str()).unwrap_or_else(|err| {
+                eprintln!("{}", err);
+                process::exit(1);
+            });
+            // - Changing the priority of the task
+            let command: Command = Command::ChangePriority(task_id, priority);
+            execute(command, &mut tasks);
+            execute(Command::ListTasks, &mut tasks);
+        }
+        "list" => {
+            // TODO: Implement the list command
+            let command: Command = Command::ListTasks;
+            execute(command, &mut tasks);
+        }
+        _ => {
+            eprintln!("Invalid command: {}", config.command);
+            process::exit(1);
+        }
     }
 }
