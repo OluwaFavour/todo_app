@@ -1,6 +1,33 @@
 use chrono::naive::NaiveDate;
-use std::io::{self, Write};
+use serde::{Deserialize, Serialize};
+use std::fs::{File, OpenOptions};
+use std::io::{self, BufReader, BufWriter, Write};
 use std::process;
+
+pub fn save_tasks(tasks: &Vec<Task>, filename: &str) -> io::Result<()> {
+    let file: File = OpenOptions::new()
+        .write(true)
+        .create(true)
+        .truncate(true)
+        .open(filename)
+        .unwrap_or_else(|err| {
+            eprintln!("Failed to open tasks file: {}", err);
+            process::exit(1);
+        });
+    let writer: BufWriter<File> = BufWriter::new(file);
+    serde_json::to_writer(writer, tasks)?;
+    Ok(())
+}
+
+pub fn load_tasks(filename: &str) -> io::Result<Vec<Task>> {
+    let file: File = OpenOptions::new().read(true).open(filename)?;
+    let reader: BufReader<File> = BufReader::new(file);
+    let tasks: Vec<Task> = serde_json::from_reader(reader).unwrap_or_else(|open_err| {
+        eprintln!("Failed to read tasks file: {}", open_err);
+        process::exit(1);
+    });
+    Ok(tasks)
+}
 
 /// Gets input from the user with the given prompt.
 ///
@@ -52,16 +79,17 @@ pub fn get_input(prompt: &str) -> String {
 ///     description: String::from("Complete the final tasks for the project"),
 ///     done: false,
 ///     priority: Priority::High,
-///     due_date: NaiveDate::from_ymd(2022, 12, 31),
+///     due_date: NaiveDate::from_ymd_opt(2022, 12, 31).unwrap().to_string(),
 /// };
 /// ```
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Task {
     pub id: u128,
     pub title: String,
     pub description: String,
     pub done: bool,
     pub priority: Priority,
-    pub due_date: NaiveDate,
+    pub due_date: String,
 }
 
 impl Task {
@@ -92,7 +120,7 @@ impl Task {
     ///     String::from("Complete the final tasks for the project"),
     ///     false,
     ///     Priority::High,
-    ///     NaiveDate::from_ymd(2022, 12, 31),
+    ///     NaiveDate::from_ymd_opt(2022, 12, 31).unwrap(),
     /// );
     /// ```
     pub fn new(
@@ -109,7 +137,7 @@ impl Task {
             description,
             done,
             priority,
-            due_date,
+            due_date: due_date.to_string(),
         }
     }
 
@@ -128,7 +156,7 @@ impl Task {
     ///     String::from("Complete the final tasks for the project"),
     ///     false,
     ///     Priority::High,
-    ///     NaiveDate::from_ymd(2022, 12, 31),
+    ///     NaiveDate::from_ymd_opt(2022, 12, 31).unwrap(),
     /// );
     /// task.mark_as_done();
     /// ```
@@ -155,7 +183,7 @@ impl Task {
     ///     String::from("Complete the final tasks for the project"),
     ///     false,
     ///     Priority::High,
-    ///     NaiveDate::from_ymd(2022, 12, 31),
+    ///     NaiveDate::from_ymd_opt(2022, 12, 31).unwrap(),
     /// );
     /// task.change_priority(Priority::Low);
     /// ```
@@ -175,7 +203,7 @@ impl Task {
 /// use todo_app::Priority;
 /// let priority = Priority::High;
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Priority {
     Low,
     Medium,
@@ -197,7 +225,7 @@ pub enum Priority {
 ///     description: String::from("Complete the final tasks for the project"),
 ///     done: false,
 ///     priority: Priority::High,
-///     due_date: NaiveDate::from_ymd_opt(2022, 12, 31).unwrap(),
+///     due_date: NaiveDate::from_ymd_opt(2022, 12, 31).unwrap().to_string(),
 /// };
 /// let command = Command::AddTask(task);
 /// ```
@@ -229,7 +257,7 @@ pub enum Command {
 ///     description: String::from("Complete the final tasks for the project"),
 ///     done: false,
 ///     priority: Priority::High,
-///     due_date: NaiveDate::from_ymd_opt(2022, 12, 31).unwrap(),
+///     due_date: NaiveDate::from_ymd_opt(2022, 12, 31).unwrap().to_string(),
 /// };
 /// let mut tasks: Vec<Task> = Vec::new();
 /// execute(Command::AddTask(task), &mut tasks);
@@ -433,6 +461,7 @@ pub fn run(config: Config, tasks: &mut Vec<Task>) {
             let task: Task = Task::new(id, title, description, done, priority, due_date);
             let command = Command::AddTask(task);
             execute(command, tasks);
+            save_tasks(tasks, "tasks.json").unwrap();
             execute(Command::ListTasks, tasks);
         }
         "remove" => {
@@ -457,6 +486,7 @@ pub fn run(config: Config, tasks: &mut Vec<Task>) {
             // - Removing the task from the list of tasks
             let command: Command = Command::RemoveTask(task_id);
             execute(command, tasks);
+            save_tasks(tasks, "tasks.json").unwrap();
             execute(Command::ListTasks, tasks);
         }
         "done" => {
@@ -481,6 +511,7 @@ pub fn run(config: Config, tasks: &mut Vec<Task>) {
             // - Changing the done status of the task
             let command: Command = Command::MarkAsDone(task_id);
             execute(command, tasks);
+            save_tasks(tasks, "tasks.json").unwrap();
             execute(Command::ListTasks, tasks);
         }
         "priority" => {
@@ -515,6 +546,7 @@ pub fn run(config: Config, tasks: &mut Vec<Task>) {
             // - Changing the priority of the task
             let command: Command = Command::ChangePriority(task_id, priority);
             execute(command, tasks);
+            save_tasks(tasks, "tasks.json").unwrap();
             execute(Command::ListTasks, tasks);
         }
         "list" => {

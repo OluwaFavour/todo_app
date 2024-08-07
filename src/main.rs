@@ -1,6 +1,6 @@
 use std::env;
 use std::process;
-use todo_app::{run, Config, Task};
+use todo_app::{load_tasks, run, Config, Task};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -19,6 +19,9 @@ fn main() {
     });
 
     // Create a list of tasks
-    let mut tasks: Vec<Task> = Vec::new();
+    let mut tasks: Vec<Task> = load_tasks("tasks.json").unwrap_or_else(|err| {
+        eprintln!("Error loading tasks: {}", err);
+        process::exit(1);
+    });
     run(config, &mut tasks);
 }
