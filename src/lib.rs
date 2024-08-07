@@ -4,6 +4,26 @@ use std::fs::{File, OpenOptions};
 use std::io::{self, BufReader, BufWriter, Write};
 use std::process;
 
+/// Saves the given list of tasks to the given file.
+/// The function writes the tasks to the file in JSON format.
+///
+/// # Arguments
+///
+/// - `tasks`: The list of tasks to save.
+/// - `filename`: The name of the file to save the tasks to.
+///
+/// # Returns
+///
+/// An io::Result indicating the result of the operation.
+///
+/// # Example
+///
+/// ```
+/// use todo_app::{save_tasks, Task};
+///
+/// let tasks: Vec<Task> = Vec::new();
+/// save_tasks(&tasks, "tasks.json").unwrap();
+/// ```
 pub fn save_tasks(tasks: &Vec<Task>, filename: &str) -> io::Result<()> {
     let file: File = OpenOptions::new()
         .write(true)
@@ -19,6 +39,24 @@ pub fn save_tasks(tasks: &Vec<Task>, filename: &str) -> io::Result<()> {
     Ok(())
 }
 
+/// Loads the list of tasks from the given file.
+/// The function reads the tasks from the file in JSON format.
+///
+/// # Arguments
+///
+/// - `filename`: The name of the file to load the tasks from.
+///
+/// # Returns
+///
+/// The list of tasks loaded from the file.
+///
+/// # Example
+///
+/// ```
+/// use todo_app::{load_tasks, Task};
+///
+/// let tasks: Vec<Task> = load_tasks("tasks.json").unwrap();
+/// ```
 pub fn load_tasks(filename: &str) -> io::Result<Vec<Task>> {
     let file: File = OpenOptions::new().read(true).open(filename)?;
     let reader: BufReader<File> = BufReader::new(file);
@@ -462,7 +500,6 @@ pub fn run(config: Config, tasks: &mut Vec<Task>) {
             let command = Command::AddTask(task);
             execute(command, tasks);
             save_tasks(tasks, "tasks.json").unwrap();
-            execute(Command::ListTasks, tasks);
         }
         "remove" => {
             // TODO: Implement the remove command (Argument: task ID)
@@ -487,7 +524,6 @@ pub fn run(config: Config, tasks: &mut Vec<Task>) {
             let command: Command = Command::RemoveTask(task_id);
             execute(command, tasks);
             save_tasks(tasks, "tasks.json").unwrap();
-            execute(Command::ListTasks, tasks);
         }
         "done" => {
             // TODO: Implement the done command (Argument: task ID)
@@ -512,7 +548,6 @@ pub fn run(config: Config, tasks: &mut Vec<Task>) {
             let command: Command = Command::MarkAsDone(task_id);
             execute(command, tasks);
             save_tasks(tasks, "tasks.json").unwrap();
-            execute(Command::ListTasks, tasks);
         }
         "priority" => {
             // TODO: Implement the priority command (Arguments: task ID, priority)
@@ -547,7 +582,6 @@ pub fn run(config: Config, tasks: &mut Vec<Task>) {
             let command: Command = Command::ChangePriority(task_id, priority);
             execute(command, tasks);
             save_tasks(tasks, "tasks.json").unwrap();
-            execute(Command::ListTasks, tasks);
         }
         "list" => {
             // TODO: Implement the list command
